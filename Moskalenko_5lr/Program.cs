@@ -8,6 +8,7 @@ namespace Moskalenko_5lr
 {
     class Program
     {
+
         class LR5
         {
             int attr_q; //quantity of attributes
@@ -15,6 +16,7 @@ namespace Moskalenko_5lr
             int[] cl_len; //classes length a1 a2 ... an
             int[,] matrix;
             List<int[]> M;
+            List<List<int>> cluster;
             string logic;
 
             public LR5(int attribute_quantity, int classes_quantity, int[] classes_length, int[,] matrix)
@@ -41,6 +43,7 @@ namespace Moskalenko_5lr
                 DeleteFromM(FindMinQof1());
                 PrintM();
                 CreateLogic();
+                MakeClusters();
             }
 
             private void CreateM(int sum_quantity) //на входе общее количество подклассов
@@ -149,6 +152,94 @@ namespace Moskalenko_5lr
 
                 Console.WriteLine(logic);
             }
+
+            private void MakeClusters()
+            {
+                List<List<int>> newM = new List<List<int>>();
+                for (int i = 0; i < M.Count(); i++)
+                {
+                    var temp = new List<int>();
+                    for (int j = 0; j < attr_q; j++)
+                        if (M[i][j] == 1)
+                            temp.Add(j);
+                    if (temp.Count() != 0)
+                        newM.Add(temp);
+                }
+
+                cluster = new List<List<int>>();
+                //заполнение cluster
+                Console.WriteLine("DDDDD");
+                for (int j = 0; j < newM[0].Count; j++)
+                {
+                    func(newM, 0, j, "");
+                }
+            }
+
+            //МАГИЯ 
+            private void func (List<List<int>> N, int i, int j, string way)
+            {
+                if (i == N.Count)
+                {
+                    Console.WriteLine(way);
+                    if (way[way.Length - 1] == ' ')
+                        way = way.Substring(0, way.Length - 1);
+                    var temp = new List<int>();
+                    foreach (var w in way.Split(' '))
+                        temp.Add(int.Parse(w));
+                    cluster.Add(temp);
+                } 
+                else if (i + 1 < N.Count && i == 0)
+                    for (int k = 0; k < N[i + 1].Count; k++)
+                        func(N, i+1, k, way + N[i][j] + ' ');
+                else if (way.IndexOf((N[i][j]).ToString()) != -1 && i < N.Count) {
+                    if (i + 1 == N.Count)
+                        func(N, i + 1, 0, way);
+                    else
+                        for (int k = 0; k < N[i + 1].Count; k++)
+                            func(N, i + 1, k, way);
+                }
+                else 
+                {
+                    bool create = true;
+                    for (int x = 0; x < i && create; x++)
+                        for (int y = 0; y < N[x].Count && create; y++)
+                            if (N[x][y] == N[i][j])
+                                create = false;
+                    string temp = way;
+                    if (temp.Length != 0)
+                    {
+                        if (temp[temp.Length - 1] == ' ')
+                            temp = temp.Substring(0, temp.Length - 1);
+
+                        foreach (var w in temp.Split(' '))
+                        {
+                            int u = -1;
+                            int.TryParse(w, out u);
+                            if (N[i].IndexOf(u) != -1)
+                            {
+                                create = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (create)
+                        if (i + 1 == N.Count)
+                            func(N, i + 1, 0, way + N[i][j]);
+                        else
+                            for (int k = 0; k < N[i + 1].Count; k++)
+                                func(N, i + 1, k, way + N[i][j] + ' ');
+                    else
+                    {
+                        string str = way + N[i][j];
+                        for (int k = 0; i + 1 < N.Count && k < N[i + 1].Count; k++)
+                            if (str.IndexOf(N[i+ 1][k].ToString()) != -1)
+                                func(N, i + 1, k, str + ' ');
+                    }
+                }
+            }
+
+
         }
 
         static void Main(string[] args)
