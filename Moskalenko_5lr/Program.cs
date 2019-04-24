@@ -20,14 +20,14 @@ namespace Moskalenko_5lr
             string logic;
             List<double> weight;
 
-            public LR5(int attribute_quantity, int classes_quantity, int[] classes_length, int[,] matrix)
+            public LR5(int[] classes_length, int[,] matrix)
             {
                 //ширина матрицы =)
-                this.attr_q = attribute_quantity;
+                this.attr_q = matrix.GetLength(1);
                 //количество классов: а, б, с...
-                this.cl_q = classes_quantity;
+                this.cl_q = classes_length.Length;
                 //количество подклассов в каждом и классов: а1, а2...
-                this.cl_len = new int[classes_quantity];
+                this.cl_len = new int[cl_q];
                 int sum = 0, k = 0;
                 foreach (var c in classes_length)
                 {
@@ -36,11 +36,12 @@ namespace Moskalenko_5lr
                 }
 
                 //исхлодная матрица признаков
-                this.matrix = new int[sum, attribute_quantity];
+                this.matrix = new int[sum, attr_q];
                 for (int i = 0; i < sum; i++)
-                    for (int j = 0; j < sum; j++)
+                    for (int j = 0; j < attr_q; j++)
                         this.matrix[i, j] = matrix[i,j];
                 CreateM(sum);
+                PrintM();
                 DeleteFromM(FindMinQof1());
                 PrintM();
                 CreateLogic();
@@ -70,15 +71,19 @@ namespace Moskalenko_5lr
                         for (int j = next_class; j < sum_quantity; j++)
                             M.Add(AddMod2(c_subclass, j));
                 }
-                PrintM();
+                
             }
 
             private int[] AddMod2 (int first, int second)
             {
                 int[] temp = new int[attr_q];
                 // сложение по модулю 2 двух строк поэлементно 
+                //Console.Write("WE HAVE ");
                 for (int j = 0; j < attr_q; j++)
                     temp[j] = (matrix[first, j] + matrix[second, j]) % 2;
+                Console.WriteLine(matrix[first, 6] +" " + matrix[second, 6]);
+                //foreach (var t in temp) Console.Write(t + " ");
+                //Console.WriteLine();
                 return temp;
             }
 
@@ -114,6 +119,10 @@ namespace Moskalenko_5lr
 
             private void DeleteFromM(int index)
             {
+                var buf = M[index];
+                M.RemoveAt(index);
+                M.Insert(0, buf);
+                index = 0;
                 for (int i = M.Count() - 1; i >= 0; i--)
                 {
                     //если все единицы в текущей строке совпадают с единицами в строке с индексом index, то она удаляется
@@ -169,10 +178,18 @@ namespace Moskalenko_5lr
                 }
 
                 feature = new List<List<int>>();
-                //заполнение cluster
+                //заполнение feature
                 for (int j = 0; j < newM[0].Count; j++)
                 {
                     func(newM, 0, j, "");
+                }
+
+                for (int i = 0; i < feature.Count; i++)
+                {
+                    Console.Write("FEATURE #" + i + " ");
+                    for (int j = 0; j < feature[i].Count; j++)
+                        Console.Write(feature[i][j] + " ");
+                    Console.WriteLine();
                 }
             }
 
@@ -186,13 +203,22 @@ namespace Moskalenko_5lr
                 //если дошли до конца по всем множителям, то создаем ту штуку
                 if (i == N.Count)
                 {
-                    Console.WriteLine(way);
+                    //Console.WriteLine(way);
                     if (way[way.Length - 1] == ' ')
                         way = way.Substring(0, way.Length - 1);
                     var temp = new List<int>();
                     foreach (var w in way.Split(' '))
                         temp.Add(int.Parse(w));
-                    feature.Add(temp);
+                    temp.Sort();
+                    bool same = false;
+                    for (int x = 0; x < feature.Count && !same; x++)
+                    {
+                        same = true;
+                        for (int y = 0; y < feature[x].Count && y < temp.Count && same; y++)
+                            if (feature[x][y] != temp[y]) same = false;
+                    }
+                    if (!same)
+                        feature.Add(temp);
                 } 
                 //если мы только в начале, то на преведущие этапы не смотрим
                 else if (i + 1 < N.Count && i == 0)
@@ -299,14 +325,24 @@ namespace Moskalenko_5lr
 
         static void Main(string[] args)
         {
-            int[,] matrix = {   { 0,1,0,0,1 },
-                                { 1,1,0,1,0 },
-                                { 0,1,1,0,1 },
-                                { 1,0,1,0,1 },
-                                { 1,0,0,1,1 } };
-            int[] clq = { 2, 3 };
-            LR5 lol = new LR5(5, 2, clq, matrix);
-            lol.FindCluster(new int[] {1,1,0,0,0});
+            //int[,] matrix = {   { 0,1,0,0,1 },
+            //                    { 1,1,0,1,0 },
+            //                    { 0,1,1,0,1 },
+            //                    { 1,0,1,0,1 },
+            //                    { 1,0,0,1,1 } };
+            //int[] clq = { 2, 3 };
+            //LR5 lol = new LR5(5, 2, clq, matrix);
+            //lol.FindCluster(new int[] {1,1,0,0,0});
+
+            int[,] matrix1 = {  { 1,0,1,1,1,0,1 },
+                                { 0,0,1,0,0,1,0 },
+                                { 1,1,0,1,0,0,1 },
+                                { 0,1,1,1,1,0,1 },
+                                { 1,1,1,0,1,1,1 },
+                                { 1,1,1,1,1,1,0} };
+            int[] clq1 = { 3, 2, 1 };
+            LR5 lol1 = new LR5(clq1, matrix1);
+            lol1.FindCluster(new int[] { 1, 1, 0, 0, 1, 0, 0 });
             Console.ReadKey();
         }
     }
