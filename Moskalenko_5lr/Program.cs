@@ -16,8 +16,9 @@ namespace Moskalenko_5lr
             int[] cl_len; //classes length a1 a2 ... an
             int[,] matrix;
             List<int[]> M;
-            List<List<int>> cluster;
+            List<List<int>> feature;
             string logic;
+            List<double> weight;
 
             public LR5(int attribute_quantity, int classes_quantity, int[] classes_length, int[,] matrix)
             {
@@ -44,6 +45,7 @@ namespace Moskalenko_5lr
                 PrintM();
                 CreateLogic();
                 MakeClusters();
+                CalculateWeight();
             }
 
             private void CreateM(int sum_quantity) //на входе общее количество подклассов
@@ -166,18 +168,22 @@ namespace Moskalenko_5lr
                         newM.Add(temp);
                 }
 
-                cluster = new List<List<int>>();
+                feature = new List<List<int>>();
                 //заполнение cluster
-                Console.WriteLine("DDDDD");
                 for (int j = 0; j < newM[0].Count; j++)
                 {
                     func(newM, 0, j, "");
                 }
             }
 
-            //МАГИЯ 
+            //РЕКУРСИВНАЯ МАГИЯ 
             private void func (List<List<int>> N, int i, int j, string way)
             {
+                //без булевой алгебры
+                //рекурсивное умножение, описание принципа следует ниже
+                //way СОСТАВЛЕН ИЗ МНОЖИТЕЛЕЙ р1*р2*р4 => "0 1 3"
+
+                //если дошли до конца по всем множителям, то создаем ту штуку
                 if (i == N.Count)
                 {
                     Console.WriteLine(way);
@@ -186,18 +192,24 @@ namespace Moskalenko_5lr
                     var temp = new List<int>();
                     foreach (var w in way.Split(' '))
                         temp.Add(int.Parse(w));
-                    cluster.Add(temp);
+                    feature.Add(temp);
                 } 
+                //если мы только в начале, то на преведущие этапы не смотрим
                 else if (i + 1 < N.Count && i == 0)
                     for (int k = 0; k < N[i + 1].Count; k++)
                         func(N, i+1, k, way + N[i][j] + ' ');
+                //если этот признак уже был ранее, то его пропускаем, запускаем дальше
                 else if (way.IndexOf((N[i][j]).ToString()) != -1 && i < N.Count) {
                     if (i + 1 == N.Count)
-                        func(N, i + 1, 0, way);
+                        func(N, i + 1, 0, way);  //это конец
                     else
-                        for (int k = 0; k < N[i + 1].Count; k++)
+                        for (int k = 0; k < N[i + 1].Count; k++) //для всех признаков следующего уровня
                             func(N, i + 1, k, way);
                 }
+                //дальше посложнее
+                //мы смотрим встречались ли Ршки с таким номером на этапах раньше,
+                //или Ршки, включенные в наш путь, есть на данном этапе
+                //ЧТОБЫ БЕЗ ПОВТОРЕНИЙ ВСЕ БЫЛО
                 else 
                 {
                     bool create = true;
@@ -222,24 +234,67 @@ namespace Moskalenko_5lr
                             }
                         }
                     }
-                    
+                    //если все норм, то на следующий этап идем
                     if (create)
                         if (i + 1 == N.Count)
                             func(N, i + 1, 0, way + N[i][j]);
                         else
                             for (int k = 0; k < N[i + 1].Count; k++)
                                 func(N, i + 1, k, way + N[i][j] + ' ');
-                    else
-                    {
-                        string str = way + N[i][j];
-                        for (int k = 0; i + 1 < N.Count && k < N[i + 1].Count; k++)
-                            if (str.IndexOf(N[i+ 1][k].ToString()) != -1)
-                                func(N, i + 1, k, str + ' ');
-                    }
                 }
             }
 
+            private void CalculateWeight()
+            {
+                weight = new List<double>();
+                int sum_q = feature.Count;
+                for (int i = 0; i < attr_q; i++)
+                {
+                    double temp = 0;
+                    for (int j = 0; j < sum_q; j++)
+                        temp += (feature[j].IndexOf(i) == -1? 0: 1);
+                    temp /= sum_q;
+                    weight.Add(temp);
+                    Console.WriteLine("p" + i + ": " + temp);
+                }
+            }
 
+            public int FindCluster(int[] obj)
+            {
+                int result = -1;
+                if (obj.Length != attr_q) return -1; //ЕРРОР
+                int max_val = -1;
+
+                int[] count = new int[cl_q];
+                
+                int this_class = 0, next_class = 0;
+
+                for (int c_class = 0; c_class < cl_q; c_class++)
+                {
+                    count[c_class] = 0;
+                    this_class = next_class; 
+                    next_class += cl_len[c_class]; //начало индексов следующего класса
+                    for (int c_subclass = this_class; c_subclass < next_class; c_subclass++)
+                    {
+                        for(int f = 0; f < feature.Count; f++)
+                        {
+                            bool ok = true;
+                            for (int g = 0; g < feature[f].Count && ok; g++)
+                                if (obj[feature[f][g]] != matrix[c_subclass, feature[f][g]])
+                                    ok = false;
+                            if (ok) count[c_class]++;
+                        }
+                    }
+                    Console.WriteLine("Class " + c_class + " = " + count[c_class]);
+                    if (count[c_class] > max_val)
+                    {
+                        max_val = count[c_class];
+                        result = c_class;
+                    }
+                }
+                Console.WriteLine("RESULT: " + result);
+                return result;
+            }
         }
 
         static void Main(string[] args)
@@ -251,6 +306,7 @@ namespace Moskalenko_5lr
                                 { 1,0,0,1,1 } };
             int[] clq = { 2, 3 };
             LR5 lol = new LR5(5, 2, clq, matrix);
+            lol.FindCluster(new int[] {1,1,0,0,0});
             Console.ReadKey();
         }
     }
