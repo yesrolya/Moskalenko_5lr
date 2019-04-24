@@ -41,10 +41,10 @@ namespace Moskalenko_5lr
                     for (int j = 0; j < attr_q; j++)
                         this.matrix[i, j] = matrix[i,j];
                 CreateM(sum);
-                PrintM();
+                //PrintM();
                 DeleteFromM(FindMinQof1());
-                PrintM();
-                CreateLogic();
+                //PrintM();
+                //CreateLogic();
                 MakeClusters();
                 CalculateWeight();
             }
@@ -78,11 +78,8 @@ namespace Moskalenko_5lr
             {
                 int[] temp = new int[attr_q];
                 // сложение по модулю 2 двух строк поэлементно 
-                //Console.Write("WE HAVE ");
                 for (int j = 0; j < attr_q; j++)
                     temp[j] = (matrix[first, j] + matrix[second, j]) % 2;
-                //foreach (var t in temp) Console.Write(t + " ");
-                //Console.WriteLine();
                 return temp;
             }
 
@@ -172,27 +169,25 @@ namespace Moskalenko_5lr
                     for (int j = 0; j < attr_q; j++)
                         if (M[i][j] == 1)
                         {
-                            newM[i].Add(new List<int>() { j});
-                            //temp.Add(j);
+                            newM[i].Add(new List<int>() { j });
                         }
                 }
 
-                Console.WriteLine("newM ");
-                for (int i = 0; i < newM.Count; i++)
-                {
-                    for (int j = 0; j < newM[i].Count; j++)
-                    {
-                        for (int k = 0; k < newM[i][j].Count; k++)
-                            Console.Write(newM[i][j][k] + " ");
-                        Console.Write(". ");
-                    }
-                    Console.WriteLine();
-                }
-
+                //Console.WriteLine("newM ");
+                //for (int i = 0; i < newM.Count; i++)
+                //{
+                //    for (int j = 0; j < newM[i].Count; j++)
+                //    {
+                //        for (int k = 0; k < newM[i][j].Count; k++)
+                //            Console.Write(newM[i][j][k] + " ");
+                //        Console.Write(". ");
+                //    }
+                //    Console.WriteLine();
+                //}
 
                 // newM состоит из индексов единиц упрощенной матрицы M
                 //заполнение feature
-                feature = (func1(newM, 0))[0];
+                feature = (func1(newM))[0];
                 
                 for (int i = 0; i < feature.Count; i++)
                 {
@@ -203,9 +198,9 @@ namespace Moskalenko_5lr
                 }
             }
 
-            private List<List<List<int>>> func1 (List<List<List<int>>> level, int gg)
+            private List<List<List<int>>> func1 (List<List<List<int>>> level)
             {
-                if (gg == 3 || level.Count == 1) return level;
+                if (level.Count == 1) return level;
 
                 List<List<List<int>>> temp1 = new List<List<List<int>>>();
 
@@ -214,15 +209,15 @@ namespace Moskalenko_5lr
                 {
                     temp1.Add(new List<List<int>>());
                     int j = 0;
-                    for (int j1 = 0; j1 < level[i].Count; j1++)
+                    for (int j1 = 0; j1 < level[i*2].Count; j1++)
                     {
-                        for (int j2 = 0; j2 < level[i + 1].Count; j2++)
+                        for (int j2 = 0; j2 < level[i*2 + 1].Count; j2++)
                         {
                             temp1[i].Add(new List<int>());
-                            foreach (var left in level[i][j1])
+                            foreach (var left in level[i*2][j1])
                                 temp1[i][j].Add(left);
                                 
-                            foreach (var right in level[i + 1][j2])
+                            foreach (var right in level[i*2 + 1][j2])
                             {
                                 if (temp1[i][j].IndexOf(right) == -1)
                                     temp1[i][j].Add(right);
@@ -256,7 +251,18 @@ namespace Moskalenko_5lr
                             }
                 }
 
-                return func1(temp1, gg+1);
+                //Console.WriteLine("TEMP1 ");
+                //for (int i = 0; i < temp1.Count; i++)
+                //{
+                //    for (int j = 0; j < temp1[i].Count; j++)
+                //    {
+                //        for (int k = 0; k < temp1[i][j].Count; k++)
+                //            Console.Write(temp1[i][j][k] + " ");
+                //        Console.Write(". ");
+                //    }
+                //    Console.WriteLine();
+                //}
+                return func1(temp1);
             }
 
             bool Consist (List<int> subList, List<int> mainList)
@@ -265,83 +271,6 @@ namespace Moskalenko_5lr
                     if (mainList.IndexOf(s) == -1)
                         return false;
                 return true;
-            }
-
-            //РЕКУРСИВНАЯ МАГИЯ 
-            private void func (List<List<int>> N, int i, int j, string way)
-            {
-                //без булевой алгебры
-                //рекурсивное умножение, описание принципа следует ниже
-                //way СОСТАВЛЕН ИЗ МНОЖИТЕЛЕЙ р1*р2*р4 => "0 1 3"
-
-                //если дошли до конца по всем множителям, то создаем ту штуку
-                if (i == N.Count)
-                {
-                    //Console.WriteLine(way);
-                    if (way[way.Length - 1] == ' ')
-                        way = way.Substring(0, way.Length - 1);
-                    var temp = new List<int>();
-                    foreach (var w in way.Split(' '))
-                        temp.Add(int.Parse(w));
-                    temp.Sort();
-                    bool same = false;
-                    for (int x = 0; x < feature.Count && !same; x++)
-                    {
-                        same = true;
-                        for (int y = 0; y < feature[x].Count && y < temp.Count && same; y++)
-                            if (feature[x][y] != temp[y]) same = false;
-                    }
-                    if (!same)
-                        feature.Add(temp);
-                } 
-                //если мы только в начале, то на преведущие этапы не смотрим
-                else if (i + 1 < N.Count && i == 0)
-                    for (int k = 0; k < N[i + 1].Count; k++)
-                        func(N, i+1, k, way + N[i][j] + ' ');
-                //если этот признак уже был ранее, то его пропускаем, запускаем дальше
-                else if (way.IndexOf((N[i][j]).ToString()) != -1 && i < N.Count) {
-                    if (i + 1 == N.Count)
-                        func(N, i + 1, 0, way);  //это конец
-                    else
-                        for (int k = 0; k < N[i + 1].Count; k++) //для всех признаков следующего уровня
-                            func(N, i + 1, k, way);
-                }
-                //дальше посложнее
-                //мы смотрим встречались ли Ршки с таким номером на этапах раньше,
-                //или Ршки, включенные в наш путь, есть на данном этапе
-                //ЧТОБЫ БЕЗ ПОВТОРЕНИЙ ВСЕ БЫЛО
-                else 
-                {
-                    bool create = true;
-                    for (int x = 0; x < i && create; x++)
-                        for (int y = 0; y < N[x].Count && create; y++)
-                            if (N[x][y] == N[i][j])
-                                create = false;
-                    string temp = way;
-                    if (temp.Length != 0)
-                    {
-                        if (temp[temp.Length - 1] == ' ')
-                            temp = temp.Substring(0, temp.Length - 1);
-
-                        foreach (var w in temp.Split(' '))
-                        {
-                            int u = -1;
-                            int.TryParse(w, out u);
-                            if (N[i].IndexOf(u) != -1)
-                            {
-                                create = false;
-                                break;
-                            }
-                        }
-                    }
-                    //если все норм, то на следующий этап идем
-                    if (create)
-                        if (i + 1 == N.Count)
-                            func(N, i + 1, 0, way + N[i][j]);
-                        else
-                            for (int k = 0; k < N[i + 1].Count; k++)
-                                func(N, i + 1, k, way + N[i][j] + ' ');
-                }
             }
 
             private void CalculateWeight()
@@ -355,7 +284,7 @@ namespace Moskalenko_5lr
                         temp += (feature[j].IndexOf(i) == -1? 0: 1);
                     temp /= sum_q;
                     weight.Add(temp);
-                    Console.WriteLine("p" + i + ": " + temp);
+                    Console.WriteLine("P" + i + ": " + temp);
                 }
             }
 
@@ -399,25 +328,25 @@ namespace Moskalenko_5lr
 
         static void Main(string[] args)
         {
-            int[,] matrix = {   { 0,1,0,0,1 },
-                                { 1,1,0,1,0 },
-                                { 0,1,1,0,1 },
-                                { 1,0,1,0,1 },
-                                { 1,0,0,1,1 } };
-            int[] clq = { 2, 3 };
-            LR5 lol = new LR5(clq, matrix);
-            lol.FindCluster(new int[] { 1, 1, 0, 0, 0 });
+            //int[,] matrix = {   { 0,1,0,0,1 },
+            //                    { 1,1,0,1,0 },
+            //                    { 0,1,1,0,1 },
+            //                    { 1,0,1,0,1 },
+            //                    { 1,0,0,1,1 } };
+            //int[] clq = { 2, 3 };
+            //LR5 lol = new LR5(clq, matrix);
+            //lol.FindCluster(new int[] { 1, 1, 0, 0, 0 });
             //string pizdets_besit = "(d+g)*(a+b)*(b+d+f)*(b+f+g)*(a+b+e+g)*(a+b+d+e)*(a+c+e)*(c+d+e+f)*(c+e+f+g)*(a+f+g)";
             //string pizdets_besit1 = "(d|g)&(a|b)&(b|d|f)&(b|f|g)&(a|b|e|g)&(a|b|d|e)&(a|c|e)&(c|d|e|f)&(c|e|f|g)&(a|f|g)";
-            //int[,] matrix1 = {  { 1,0,1,1,1,0,1 },
-            //                    { 0,0,1,0,0,1,0 },
-            //                    { 1,1,0,1,0,0,1 },
-            //                    { 0,1,1,1,1,0,1 },
-            //                    { 1,1,1,0,1,1,1 },
-            //                    { 1,1,1,1,1,1,0} };
-            //int[] clq1 = { 3, 2, 1 };
-            //LR5 lol1 = new LR5(clq1, matrix1);
-            //lol1.FindCluster(new int[] { 1, 1, 0, 0, 1, 0, 0 });
+            int[,] matrix1 = {  { 1,0,1,1,1,0,1 },
+                                { 0,0,1,0,0,1,0 },
+                                { 1,1,0,1,0,0,1 },
+                                { 0,1,1,1,1,0,1 },
+                                { 1,1,1,0,1,1,1 },
+                                { 1,1,1,1,1,1,0} };
+            int[] clq1 = { 3, 2, 1 };
+            LR5 lol1 = new LR5(clq1, matrix1);
+            lol1.FindCluster(new int[] { 1, 1, 0, 0, 1, 0, 1 });
             Console.ReadKey();
         }
     }
